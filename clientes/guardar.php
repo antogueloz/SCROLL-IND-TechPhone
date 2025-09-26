@@ -3,46 +3,67 @@ session_start();
 include '../includes/conexion.php';
 
 try {
-    // Solo admin, cajera o vendedor pueden agregar clientes
-    $roles_permitidos = ['admin', 'cajera', 'vendedor'];
-    if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], $roles_permitidos)) {
-        header("Location: ../login.php");
-        exit;
-    }
-
-    $dni = $_POST['dni'] ?? null;
+    $tipo_documento = $_POST['tipo_documento'] ?? null;
+    $numero_documento = $_POST['numero_documento'] ?? null;
     $nombre = $_POST['nombre'] ?? null;
     $telefono = $_POST['telefono'] ?? null;
     $email = $_POST['email'] ?? null;
     $direccion = $_POST['direccion'] ?? null;
+    $es_extranjero = isset($_POST['es_extranjero']) ? 1 : 0;
 
     // Validaciones
-    if (!$dni || !preg_match('/^\d{8}$/', $dni)) {
-        throw new Exception("DNI debe tener 8 dígitos numéricos");
+    if (!$tipo_documento || !$numero_documento) {
+        throw new Exception("Tipo de documento y número son obligatorios");
     }
-    if (!$nombre) {
-        throw new Exception("Nombre del cliente es obligatorio");
+
+    // Validar número de documento según tipo
+    switch ($tipo_documento) {
+        case 'dni':
+            if (!preg_match('/^\d{8}$/', $numero_documento)) {
+                throw new Exception("DNI debe tener 8 dígitos numéricos");
+            }
+            break;
+        case 'ruc':
+            if (!preg_match('/^\d{11}$/', $numero_documento)) {
+                throw new Exception("RUC debe tener 11 dígitos numéricos");
+            }
+            break;
+        case 'ce':
+            if (!preg_match('/^\d{12}$/', $numero_documento)) {
+                throw new Exception("Carnet de Extranjería debe tener 12 dígitos");
+            }
+            break;
+        default:
+            throw new Exception("Tipo de documento no válido");
+    }
+
+    // Validar teléfono
+    if (!$telefono) {
+        throw new Exception("Teléfono es obligatorio");
+    }
+    if (!$es_extranjero && !preg_match('/^\d{9}$/', $telefono)) {
+        throw new Exception("Teléfono debe tener 9 dígitos numéricos");
     }
 
     // Verificar si ya existe
-    $stmt = $pdo->prepare("SELECT id FROM clientes WHERE dni = ?");
-    $stmt->execute([$dni]);
+    $stmt = $pdo->prepare("SELECT id FROM clientes WHERE tipo_documento = ? AND numero_documento = ?");
+    $stmt->execute([$tipo_documento, $numero_documento]);
     $cliente = $stmt->fetch();
 
     if ($cliente) {
-        throw new Exception("Cliente ya registrado con este DNI");
+        throw new Exception("Cliente ya registrado con este documento");
     }
 
     // Insertar nuevo cliente
-    $stmt = $pdo->prepare("INSERT INTO clientes (dni, nombre, telefono, email, direccion) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$dni, $nombre, $telefono, $email, $direccion]);
+    $stmt = $pdo->prepare("INSERT INTO clientes (tipo_documento, numero_documento, nombre, telefono, email, direccion) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$tipo_documento, $numero_documento, $nombre, $telefono, $email, $direccion]);
 
     header("Location: index.php?mensaje=Cliente registrado correctamente");
     exit;
 
 } catch (Exception $e) {
-    error_log("Error en guardar.php: " . $e->getMessage());
-    header("Location: agregar.php?mensaje=" . urlencode($e->getMessage()));
+    $_SESSION['error'] = $e->getMessage();
+    header("Location: agregar.php");
     exit;
 }
 ?>
