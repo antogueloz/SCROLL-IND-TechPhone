@@ -23,7 +23,7 @@ redirigirSiNoAutorizado(['admin', 'cajera', 'vendedor']);
                         unset($_SESSION['error']);
                     }
                     ?>
-                   <form method="POST" action="guardar.php" id="clienteForm">
+                    <form method="POST" action="guardar.php" id="clienteForm">
                         <div class="mb-3">
                             <label for="tipo_documento" class="form-label">Tipo de Documento</label>
                             <select name="tipo_documento" id="tipo_documento" class="form-select" required>
@@ -35,7 +35,7 @@ redirigirSiNoAutorizado(['admin', 'cajera', 'vendedor']);
 
                         <div class="mb-3">
                             <label for="numero_documento" class="form-label">Número de Documento *</label>
-                            <input type="text" name="numero_documento" id="numero_documento" class="form-control" required placeholder="Ingrese número de documento">
+                            <input type="text" name="numero_documento" id="numero_documento" class="form-control" required placeholder="Ingrese número de documento" inputmode="numeric" pattern="\d*" maxlength="12">
                             <div id="error_numero_documento" class="text-danger mt-1" style="font-size: 0.875rem;"></div>
                         </div>
 
